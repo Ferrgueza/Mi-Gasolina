@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gasolina</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="theme-color" content="#e8590c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8edee;--card:#fff;--ink:#12252d;--mute:#5d707a;--line:#cdd8dc;--acc:#e8590c;--acc-ink:#fff;--ok:#1b7f5c}
+:root[data-theme=dark]{--bg:#0f1c21;--card:#172830;--ink:#e8f0f2;--mute:#8fa4ad;--line:#28404a;--ok:#4cc9a0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,system-ui,sans-serif}
+h1,h2,.num{font-family:"Barlow Semi Condensed",sans-serif;letter-spacing:.01em}
+main{max-width:720px;margin:0 auto;padding:20px 16px calc(90px + env(safe-area-inset-bottom))}
+h1{font-size:28px;margin:0 0 16px;font-weight:800}
+h2{font-size:20px;margin:0 0 12px;font-weight:700}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px}
+button.p{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:500;width:100%;padding:12px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.hero{background:var(--ink);color:var(--bg);border:0}
+:root[data-theme=dark] .hero{background:#22404b;color:#e8f0f2}
+.hero .big{font-size:64px;font-weight:800;line-height:1}
+.hero .big small{font-size:22px;font-weight:500;margin-left:6px;color:var(--acc)}
+.hero p{margin:6px 0 0;opacity:.75}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.stats div{border-top:2px solid var(--acc);padding-top:6px}
+.stats b{display:block;font:700 22px "Barlow Semi Condensed"}
+.stats span{font-size:13px;opacity:.75}
+form,.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:flex;flex-direction:column;font-size:14px;color:var(--mute);gap:4px}
+label.w,.w{grid-column:1/-1}
+input,select,textarea{font:inherit;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input[type=color]{padding:2px;height:44px}
+textarea{min-height:130px;font:13px/1.4 ui-monospace,monospace}
+.hint{color:var(--mute);font-size:14px;margin:0}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 0;border-top:1px solid var(--line)}
+.mh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px;padding-bottom:4px;border-bottom:2px solid var(--acc)}
+.mh:first-child{margin-top:0}
+.mh b{text-transform:capitalize;font:700 18px "Barlow Semi Condensed"}
+.mh span{font-size:13px;color:var(--mute)}
+.mh+.row{border-top:0}
+.row .d{font-weight:500}
+.row .m{color:var(--mute);font-size:14px}
+.row .c{font:700 20px "Barlow Semi Condensed";text-align:right;color:var(--ok)}
+.row .x{grid-column:2;grid-row:2;justify-self:end;border:0;background:none;color:var(--mute);padding:0;font-size:13px;text-decoration:underline}
+.badge{display:block;font-size:12px;margin-top:2px}
+.badge.low{color:#c92a2a}
+.badge.high{color:var(--ok)}
+.hhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.hhead h2{margin:0}
+#histFilter{width:auto;padding:7px 10px;font-size:14px}
+.barchart{display:flex;align-items:flex-end;gap:6px;height:130px}
+.bwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.bwrap i{width:100%;background:var(--acc);border-radius:3px 3px 0 0;min-height:3px;display:block}
+.bwrap span{font-size:10px;color:var(--mute);white-space:nowrap}
+#proj{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+.chart{display:flex;align-items:flex-end;gap:4px;height:90px}
+.chart i{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:3px}
+.err{color:#c92a2a;font-size:14px}
+.ok{color:var(--ok);font-size:14px}
+.banner{border-left:4px solid var(--acc)}
+a.lnk{color:var(--acc);font-weight:500;cursor:pointer;text-decoration:underline}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;border-radius:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0;color:var(--mute);font-size:13px}
+nav button[aria-current=page]{color:var(--acc);font-weight:500}
+nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.mhead h2{margin:0;text-transform:capitalize;text-align:center;flex:1}
+.mhead button{width:44px;padding:8px 0}
+.mhead button:disabled{opacity:.35;cursor:default}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi span{font-size:13px;color:var(--mute)}
+.kpi b{display:block;font:700 26px/1.15 "Barlow Semi Condensed"}
+.kpi small{font-size:12px;color:var(--mute)}
+.kpi small.ok{color:var(--ok)}.kpi small.err{color:#c92a2a}
+.cmp h3{font:700 17px "Barlow Semi Condensed";margin:16px 0 6px}
+.cmp h3:first-child{margin-top:0}
+.br{display:grid;grid-template-columns:52px 1fr 92px;gap:8px;align-items:center;width:100%;border:0;background:none;padding:3px 0;font-size:14px;text-align:left;border-radius:4px}
+.br .t{height:14px;background:var(--line);border-radius:3px;overflow:hidden}
+.br .t i{display:block;height:100%;background:var(--acc);opacity:.4}
+.br span:last-child{text-align:right}
+.br.sel{font-weight:500}.br.sel .t i{opacity:1}
+[hidden]{display:none!important}
+@media(max-width:420px){.hero .big{font-size:52px}}
+</style>
+</head>
+<body>
+<main>
+<!-- PÁGINA REGISTRO -->
+<section id="pReg">
+  <h1 id="appName">Gasolina</h1>
+  <div id="banner" class="card banner" hidden></div>
+
+  <div class="card hero" aria-live="polite">
+    <div class="big"><span id="avg">–</span><small>L/100 km</small></div>
+    <p>Consumo medio · cuentakilómetros: <b id="odoNow">–</b></p>
+    <div class="stats">
+      <div><b id="tGasto">0</b><span>Gastado</span></div>
+      <div><b id="tKm">0 km</b><span>Recorridos</span></div>
+      <div><b id="tKmE">–</b><span>por 100 km</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Nuevo repostaje</h2>
+    <form id="f">
+      <label class="w">Fecha<input type="date" id="fecha" required></label>
+      <label id="litrosLabel">Litros<input type="number" id="litros" step="0.01" min="0.01" inputmode="decimal"></label>
+      <label>Importe<input type="number" id="importe" step="0.01" min="0.01" inputmode="decimal" required></label>
+      <label class="w">Km actuales del coche (cuentakilómetros)<input type="number" id="odo" step="1" min="0" inputmode="numeric" required></label>
+      <p class="hint w" id="preview"></p>
+      <button class="p w" type="submit">Guardar repostaje</button>
+    </form>
+  </div>
+
+  <div class="card" id="chartCard" hidden>
+    <h2>Consumo por repostaje</h2>
+    <div class="chart" id="chart" role="img" aria-label="Gráfico de consumo por repostaje"></div>
+  </div>
+
+  <div class="card">
+    <div class="hhead">
+      <h2>Historial</h2>
+      <select id="histFilter"><option value="">Todos los meses</option></select>
+    </div>
+    <div id="list"><p class="hint">Aún no hay repostajes.</p></div>
+  </div>
+</section>
+
+<!-- PÁGINA KPIs -->
+<section id="pKpi" hidden>
+  <h1>KPIs por mes</h1>
+  <div class="card">
+    <div class="mhead">
+      <button id="mPrev" aria-label="Mes anterior">‹</button>
+      <h2 id="mLabel">Mes</h2>
+      <button id="mNext" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <p class="hint" id="proj" hidden></p>
+  </div>
+
+  <div class="card" id="gastoCard" hidden>
+    <h2>Gasto por mes</h2>
+    <div class="barchart" id="gastoChart"></div>
+  </div>
+
+  <div class="card" id="cmpCard" hidden>
+    <h2>Comparativa por meses</h2>
+    <p class="hint" style="margin-bottom:8px">Últimos 12 meses con datos. Toca un mes para ver sus KPIs.</p>
+    <div class="cmp" id="cmp"></div>
+  </div>
+</section>
+
+<!-- PÁGINA CONFIGURACIÓN -->
+<section id="pCfg" hidden>
+  <h1>Configuración</h1>
+
+  <div class="card">
+    <h2>Coche</h2>
+    <label>Km actuales del coche (punto de partida)
+      <input type="number" id="cKm" step="1" min="0" inputmode="numeric">
+    </label>
+    <p class="hint" style="margin:8px 0 12px">El primer repostaje calculará los km recorridos desde este número. Después, cada repostaje parte del anterior.</p>
+    <button class="p" id="saveKm">Guardar km</button>
+    <p id="msgKm" class="ok"></p>
+  </div>
+
+  <div class="card">
+    <h2>Personalizar</h2>
+    <div class="grid">
+      <label class="w">Nombre de la app<input id="cName" maxlength="30"></label>
+      <label>Color principal<input type="color" id="cColor"></label>
+      <label>Tema<select id="cTheme"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
+      <label>Moneda<select id="cCur"><option>€</option><option>$</option><option>£</option></select></label>
+      <label class="w">Precio medio del litro (opcional)
+        <input type="number" id="cPrecio" step="0.001" min="0" inputmode="decimal" placeholder="p. ej. 1,55">
+      </label>
+    </div>
+    <p class="hint" id="hintPrecio" style="margin-top:6px"></p>
+    <p class="hint" style="margin-top:8px">Se guarda en este dispositivo.</p>
+  </div>
+
+  <div class="card">
+    <h2>Dónde se guardan los datos</h2>
+    <p class="hint" style="margin-bottom:12px">Los repostajes se guardan en Firebase (Firestore), un documento por mes (2026-09, 2026-10…) con su resumen. Estado: <b id="fbState">–</b></p>
+    <div class="grid">
+      <label class="w">Nombre de la colección<input id="cCol" placeholder="fuel"></label>
+      <label class="w">Configuración de Firebase (pega el bloque firebaseConfig)
+        <textarea id="cFb" spellcheck="false" placeholder='apiKey: "…", authDomain: "…", projectId: "…", appId: "…"'></textarea>
+      </label>
+    </div>
+    <button class="p" id="saveFb" style="margin-top:12px">Guardar conexión y recargar</button>
+    <p id="msgFb" class="err"></p>
+    <p class="hint">Se guarda en este dispositivo; si lo dejas vacío se usa la que está escrita en el código.</p>
+  </div>
+
+  <div class="card" id="migBox" hidden>
+    <h2>Registros antiguos</h2>
+    <p class="hint" style="margin-bottom:12px">Hay repostajes guardados con el formato anterior, sin agrupar por mes.</p>
+    <button class="p" id="mig">Pasarlos a sus meses</button>
+    <p id="msgMig" class="ok"></p>
+  </div>
+
+  <div class="card">
+    <h2>Copia de seguridad</h2>
+    <button id="exp">Descargar historial (CSV)</button>
+  </div>
+</section>
+</main>
+
+<nav aria-label="Secciones">
+  <button id="tReg" aria-current="page"><svg viewBox="0 0 24 24"><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h14M15 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3M7 8h6"/></svg>Registro</button>
+  <button id="tKpi"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>KPIs</button>
+  <button id="tCfg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuración</button>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, deleteDoc, setDoc, doc, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ▼▼ CONFIGURACIÓN POR DEFECTO DE FIREBASE (también se puede cambiar desde Configuración) ▼▼
+const defaultFirebase = {
+  apiKey: "AIzaSyAehmYDUeubnprdnQ_bkKFUp63WHF5yPHQ",
+  authDomain: "mi-gasolina-ea5eb.firebaseapp.com",
+  projectId: "mi-gasolina-ea5eb",
+  storageBucket: "mi-gasolina-ea5eb.firebasestorage.app",
+  messagingSenderId: "184097329823",
+  appId: "1:184097329823:web:4df367ab3c2400812fc8aa"
+};
+// ▲▲ ------------------------------------------------------------------------------- ▲▲
+
+const $ = id => document.getElementById(id);
+const fmt = (n, d = 2) => n.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+const ls = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
+             set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} } };
+
+// ---------- Ajustes locales (personalización + conexión) ----------
+const S = Object.assign({ name: "Gasolina", color: "#e8590c", theme: "auto", cur: "€", col: "fuel", fb: null, precio: null }, ls.get("fuel_settings", {}));
+const saveS = () => ls.set("fuel_settings", S);
+const mq = matchMedia("(prefers-color-scheme: dark)");
+
+function applyLook() {
+  const r = document.documentElement;
+  r.dataset.theme = S.theme === "auto" ? (mq.matches ? "dark" : "light") : S.theme;
+  r.style.setProperty("--acc", S.color);
+  const n = parseInt(S.color.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255));
+  r.style.setProperty("--acc-ink", lum > 150 ? "#111" : "#fff");
+  $("appName").textContent = document.title = S.name || "Gasolina";
+}
+mq.addEventListener("change", applyLook);
+applyLook();
+
+if ("serviceWorker" in navigator) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
+// ---------- Navegación ----------
+function go(page) {
+  for (const [k, p, t] of [["reg", "pReg", "tReg"], ["kpi", "pKpi", "tKpi"], ["cfg", "pCfg", "tCfg"]]) {
+    $(p).hidden = page !== k;
+    $(t).ariaCurrent = page === k ? "page" : "false";
+  }
+  scrollTo(0, 0);
+}
+$("tReg").onclick = () => { toggleLitrosField(); go("reg"); }; $("tKpi").onclick = () => go("kpi"); $("tCfg").onclick = () => go("cfg");
+
+// ---------- Firebase ----------
+const fbCfg = S.fb || defaultFirebase;
+const configured = fbCfg.apiKey && !fbCfg.apiKey.startsWith("TU_");
+let db = null, colRef = null, cfgRef = null;
+let items = [], kmInicial = null;
+
+$("fbState").textContent = configured ? "conectado a " + fbCfg.projectId : "sin configurar";
+if (!configured) {
+  $("banner").hidden = false;
+  $("banner").innerHTML = 'Firebase aún no está conectado. <a class="lnk" id="goCfg">Ábrelo en Configuración</a>.';
+  $("goCfg").onclick = () => go("cfg");
+} else {
+  db = getFirestore(initializeApp(fbCfg));
+  colRef = collection(db, S.col);
+  cfgRef = doc(db, S.col, "_config");
+  onSnapshot(colRef,
+    snap => {
+      items = [];
+      snap.docs.forEach(d => {
+        const v = d.data();
+        if (Array.isArray(v.registros)) v.registros.forEach(r => items.push(r));
+        else if (v.fecha) items.push({ id: d.id, ...v, legacy: true });
+      });
+      items.sort((a, b) => b.fecha.localeCompare(a.fecha) || (b.odo || 0) - (a.odo || 0));
+      render();
+    },
+    e => { $("list").innerHTML = '<p class="err">Error al leer datos (' + e.code + '). Revisa las reglas de Firestore.</p>'; });
+  onSnapshot(cfgRef, s => { kmInicial = s.exists() ? s.data().kmInicial ?? null : null; if (document.activeElement !== $("cKm")) $("cKm").value = kmInicial ?? ""; render(); });
+}
+
+// ---------- Cálculos ----------
+const lastOdo = () => {
+  const odos = items.map(x => x.odo).filter(v => typeof v === "number");
+  if (kmInicial != null) odos.push(kmInicial);
+  return odos.length ? Math.max(...odos) : null;
+};
+
+$("fecha").valueAsDate = new Date();
+function lastPricePerLiter() {
+  const last = items.find(x => x.litros > 0);
+  return last ? last.importe / last.litros : null;
+}
+function autoLitros() {
+  if (S.precio && $("importe").value) {
+    $("litros").value = (+$("importe").value / S.precio).toFixed(2);
+    return;
+  }
+  const sug = lastPricePerLiter();
+  if (sug && $("importe").value && (!$("litros").value || $("litros").dataset.auto)) {
+    $("litros").value = (+$("importe").value / sug).toFixed(2);
+    $("litros").dataset.auto = "1";
+  }
+}
+function toggleLitrosField() {
+  const auto = !!S.precio;
+  $("litrosLabel").hidden = auto;
+  $("litros").required = !auto;
+  autoLitros();
+}
+function preview() {
+  const l = +$("litros").value, i = +$("importe").value, o = +$("odo").value, p = lastOdo();
+  const t = [];
+  if (p == null) { $("preview").innerHTML = 'Antes de empezar, indica los km actuales del coche en <a class="lnk" id="goCfg2">Configuración</a>.'; $("goCfg2").onclick = () => go("cfg"); return; }
+  const km = o - p;
+  if (o && km <= 0) { $("preview").textContent = "Los km deben ser mayores que el último registro (" + fmt(p, 0) + ")."; return; }
+  if (km > 0) { t.push(fmt(km, 0) + " km recorridos"); if (l) t.push(fmt(l / km * 100) + " L/100 km"); if (i) t.push(fmt(i / km * 100) + " " + S.cur + "/100 km"); }
+  if (l && i) t.push(fmt(i / l, 3) + " " + S.cur + "/L");
+  $("preview").textContent = t.join("  ·  ");
+}
+$("importe").addEventListener("input", () => { autoLitros(); preview(); });
+$("litros").addEventListener("input", () => { delete $("litros").dataset.auto; preview(); });
+$("odo").addEventListener("input", preview);
+toggleLitrosField();
+
+const mes = f => f.slice(0, 7);
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2);
+const resumen = r => ({ n: r.length, litros: r.reduce((s, x) => s + x.litros, 0), importe: r.reduce((s, x) => s + x.importe, 0), km: r.reduce((s, x) => s + x.km, 0) });
+const putMonth = (tx, ref, m, regs) => regs.length ? tx.set(ref, { mes: m, registros: regs, resumen: resumen(regs) }) : tx.delete(ref);
+
+async function saveReg(r) {
+  r.id = uid();
+  const m = mes(r.fecha), ref = doc(db, S.col, m);
+  await runTransaction(db, async tx => {
+    const s = await tx.get(ref);
+    putMonth(tx, ref, m, [...(s.data()?.registros || []), r]);
+  });
+}
+async function delReg(id) {
+  const x = items.find(i => i.id === id);
+  if (!x) return;
+  if (x.legacy) return deleteDoc(doc(db, S.col, id));
+  const m = mes(x.fecha), ref = doc(db, S.col, m);
+  await runTransaction(db, async tx => {
+    const s = await tx.get(ref);
+    putMonth(tx, ref, m, (s.data()?.registros || []).filter(i => i.id !== id));
+  });
+}
+
+$("f").onsubmit = async e => {
+  e.preventDefault();
+  if (!db) return go("cfg");
+  autoLitros();
+  if (!$("litros").value) { $("preview").textContent = "Escribe los litros o pon un precio medio en Configuración."; return; }
+  const p = lastOdo(), o = +$("odo").value;
+  if (p == null) return preview();
+  if (o <= p) return preview();
+  try {
+    await saveReg({ fecha: $("fecha").value, litros: +$("litros").value, importe: +$("importe").value, odo: o, km: o - p });
+    ["litros", "importe", "odo"].forEach(id => $(id).value = ""); delete $("litros").dataset.auto;
+    $("preview").textContent = "Guardado.";
+  } catch (err) { $("preview").textContent = "Error al guardar: " + err.code; }
+};
+
+let selMonth = null;
+const agg = key => {
+  const a = items.filter(x => x.fecha && x.fecha.startsWith(key));
+  if (!a.length) return null;
+  const L = a.reduce((s, x) => s + x.litros, 0), E = a.reduce((s, x) => s + x.importe, 0), K = a.reduce((s, x) => s + x.km, 0);
+  return { n: a.length, L, E, K, cons: K ? L / K * 100 : null, e100: K ? E / K * 100 : null, pl: L ? E / L : null, Lm: L / a.length, Em: E / a.length, Km_: K / a.length };
+};
+const prevKey = key => { const [y, m] = key.split("-").map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
+function renderKpis() {
+  const months = [...new Set(items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean))].sort();
+  const now = new Date().toISOString().slice(0, 7);
+  if (!months.includes(now)) months.push(now);
+  months.sort();
+  if (!selMonth || !months.includes(selMonth)) selMonth = months.includes(now) && !items.length ? now : (months.filter(m => agg(m)).pop() || now);
+  const i = months.indexOf(selMonth);
+  $("mPrev").disabled = i <= 0; $("mNext").disabled = i >= months.length - 1;
+  const [y, m] = selMonth.split("-").map(Number);
+  $("mLabel").textContent = new Date(y, m - 1, 1).toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  const c = agg(selMonth), p = agg(prevKey(selMonth));
+  if (!c) { $("kpis").innerHTML = '<p class="hint w">Sin repostajes este mes.</p>'; return; }
+  const dl = (cur, prev, lowBetter) => {
+    if (cur == null || prev == null || !prev) return "<small>&nbsp;</small>";
+    const pct = (cur - prev) / prev * 100;
+    return `<small class="${lowBetter ? (pct <= 0 ? "ok" : "err") : ""}">${pct > 0 ? "+" : ""}${fmt(pct, 0)} % vs mes anterior</small>`;
+  };
+  const k = (label, val, cur, prev, low) => `<div class="kpi"><span>${label}</span><b>${val}</b>${dl(cur, p && prev, low)}</div>`;
+  $("kpis").innerHTML =
+    k("Gasto", fmt(c.E) + " " + S.cur, c.E, p?.E, true) +
+    k("Litros", fmt(c.L) + " L", c.L, p?.L, false) +
+    k("Km recorridos", fmt(c.K, 0) + " km", c.K, p?.K, false) +
+    k("Consumo", c.cons != null ? fmt(c.cons) + " L/100" : "–", c.cons, p?.cons, true) +
+    k("Coste por 100 km", c.e100 != null ? fmt(c.e100) + " " + S.cur : "–", c.e100, p?.e100, true) +
+    k("Precio medio", fmt(c.pl, 3) + " " + S.cur + "/L", c.pl, p?.pl, true) +
+    k("Km medios/repostaje", fmt(c.Km_, 0) + " km", c.Km_, p?.Km_, false) +
+    k("Litros medios/repostaje", fmt(c.Lm) + " L", c.Lm, p?.Lm, false) +
+    k("Gasto medio/repostaje", fmt(c.Em) + " " + S.cur, c.Em, p?.Em, true) +
+    k("Repostajes", c.n, c.n, p?.n, false);
+
+  const today = new Date(), nowKey = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0");
+  if (selMonth === nowKey) {
+    const day = today.getDate(), daysInMonth = new Date(y, m, 0).getDate();
+    const proy = c.E / day * daysInMonth;
+    $("proj").hidden = false;
+    $("proj").textContent = "A este ritmo, este mes te gastarás ~" + fmt(proy) + " " + S.cur + " (llevas " + fmt(c.E) + " " + S.cur + " en " + day + " días).";
+  } else $("proj").hidden = true;
+}
+const stepMonth = d => {
+  const months = [...new Set([...items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean), new Date().toISOString().slice(0, 7)])].sort();
+  const j = months.indexOf(selMonth) + d;
+  if (j >= 0 && j < months.length) { selMonth = months[j]; renderKpis(); renderCompare(); }
+};
+$("mPrev").onclick = () => stepMonth(-1); $("mNext").onclick = () => stepMonth(1);
+
+function renderCompare() {
+  const ms = [...new Set(items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean))].sort().slice(-12);
+  $("cmpCard").hidden = ms.length < 2;
+  $("gastoCard").hidden = ms.length < 2;
+  if (ms.length < 2) return;
+  const data = ms.map(m => ({ m, a: agg(m) }));
+  const gMax = Math.max(...data.map(d => d.a.E)) || 1;
+  $("gastoChart").innerHTML = data.map(d => {
+    const [yy, mo] = d.m.split("-").map(Number);
+    const lab = new Date(yy, mo - 1, 1).toLocaleDateString("es-ES", { month: "short" });
+    return `<div class="bwrap" title="${fmt(d.a.E)} ${S.cur}"><i style="height:${d.a.E / gMax * 100}%"></i><span>${lab}</span></div>`;
+  }).join("");
+  const sec = (title, get, show) => {
+    const vals = data.map(d => get(d.a)), max = Math.max(...vals.map(v => v ?? 0)) || 1;
+    return `<h3>${title}</h3>` + data.map((d, i) => {
+      const v = vals[i], [y, mo] = d.m.split("-").map(Number);
+      const lab = new Date(y, mo - 1, 1).toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+      return `<button class="br${d.m === selMonth ? " sel" : ""}" data-m="${d.m}"><span>${lab}</span><span class="t"><i style="width:${(v ?? 0) / max * 100}%"></i></span><span>${v == null ? "–" : show(v)}</span></button>`;
+    }).join("");
+  };
+  $("cmp").innerHTML =
+    sec("Gasto", a => a.E, v => fmt(v) + " " + S.cur) +
+    sec("Consumo medio", a => a.cons, v => fmt(v) + " L/100") +
+    sec("Km recorridos", a => a.K, v => fmt(v, 0) + " km");
+}
+$("cmp").addEventListener("click", e => {
+  const b = e.target.closest("[data-m]");
+  if (b) { selMonth = b.dataset.m; renderKpis(); renderCompare(); }
+});
+
+function render() {
+  renderKpis();
+  renderCompare();
+  $("migBox").hidden = !items.some(x => x.legacy);
+  const L = items.reduce((s, x) => s + x.litros, 0), E = items.reduce((s, x) => s + x.importe, 0), K = items.reduce((s, x) => s + x.km, 0);
+  $("avg").textContent = K ? fmt(L / K * 100) : "–";
+  $("tGasto").textContent = fmt(E) + " " + S.cur;
+  $("tKm").textContent = fmt(K, 0) + " km";
+  $("tKmE").textContent = K ? fmt(E / K * 100) + " " + S.cur : "–";
+  const p = lastOdo(); $("odoNow").textContent = p != null ? fmt(p, 0) + " km" : "–";
+  $("odo").placeholder = p != null ? "Último: " + fmt(p, 0) : "";
+  preview();
+
+  if (!items.length) { $("list").innerHTML = '<p class="hint">Aún no hay repostajes. Añade el primero arriba.</p>'; $("chartCard").hidden = true; $("histFilter").innerHTML = '<option value="">Todos los meses</option>'; return; }
+
+  const monthsDesc = [...new Set(items.map(x => mes(x.fecha)))].sort().reverse();
+  const curSel = $("histFilter").value;
+  $("histFilter").innerHTML = '<option value="">Todos los meses</option>' + monthsDesc.map(m => {
+    const [yy, mo] = m.split("-").map(Number);
+    const lab = new Date(yy, mo - 1, 1).toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+    return `<option value="${m}">${lab[0].toUpperCase() + lab.slice(1)}</option>`;
+  }).join("");
+  $("histFilter").value = monthsDesc.includes(curSel) ? curSel : "";
+  const shown = $("histFilter").value ? items.filter(x => mes(x.fecha) === $("histFilter").value) : items;
+
+  const validKm = shown.filter(x => x.km > 0).map(x => x.km);
+  const avgKm = validKm.length ? validKm.reduce((s, v) => s + v, 0) / validKm.length : 0;
+  let cur = "";
+  $("list").innerHTML = shown.map(x => {
+    let badge = "";
+    if (avgKm) {
+      if (x.km < avgKm * 0.9) badge = '<span class="badge low">rinde menos de lo habitual</span>';
+      else if (x.km > avgKm * 1.1) badge = '<span class="badge high">rinde más de lo habitual</span>';
+    }
+    let head = "";
+    if (mes(x.fecha) !== cur) {
+      cur = mes(x.fecha);
+      const t = agg(cur), [yy, mm] = cur.split("-").map(Number);
+      head = `<div class="mh"><b>${new Date(yy, mm - 1, 1).toLocaleDateString("es-ES", { month: "long", year: "numeric" })}</b><span>${t.n} repostaje${t.n > 1 ? "s" : ""} · ${fmt(t.E)} ${S.cur} · ${fmt(t.K, 0)} km</span></div>`;
+    }
+    const f = new Date(x.fecha + "T00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    return head + `<div class="row"><div class="d">${f}</div><div class="c">${fmt(x.litros / x.km * 100)} L/100</div>
+      <div class="m">${fmt(x.litros)} L · ${fmt(x.importe)} ${S.cur} · ${fmt(x.km, 0)} km${x.odo ? " (cuentakm " + fmt(x.odo, 0) + ")" : ""} · ${fmt(x.importe / x.litros, 3)} ${S.cur}/L${badge}</div>
+      <button class="x" data-id="${x.id}">Borrar</button></div>`;
+  }).join("");
+  const last = shown.slice(0, 12).reverse().map(x => x.litros / x.km * 100), max = Math.max(...last);
+  $("chart").innerHTML = last.map(v => `<i style="height:${v / max * 100}%" title="${fmt(v)} L/100 km"></i>`).join("");
+  $("chartCard").hidden = shown.length < 2;
+
+  if (configured) {
+    const dias = (Date.now() - new Date(items[0].fecha + "T00:00")) / 86400000;
+    if (dias >= 20) { $("banner").hidden = false; $("banner").innerHTML = "Llevas " + Math.floor(dias) + " días sin registrar un repostaje."; }
+    else $("banner").hidden = true;
+  }
+}
+$("histFilter").addEventListener("change", render);
+$("list").addEventListener("click", async e => {
+  const id = e.target.dataset.id;
+  if (id && confirm("¿Borrar este repostaje?")) await delReg(id);
+});
+
+// ---------- Configuración: coche ----------
+$("saveKm").onclick = async () => {
+  const v = +$("cKm").value;
+  if (!db) { $("msgKm").className = "err"; $("msgKm").textContent = "Conecta Firebase primero (más abajo)."; return; }
+  if ($("cKm").value === "" || v < 0) { $("msgKm").className = "err"; $("msgKm").textContent = "Escribe los km que marca ahora el coche."; return; }
+  try { await setDoc(cfgRef, { kmInicial: v }, { merge: true }); $("msgKm").className = "ok"; $("msgKm").textContent = "Guardado."; }
+  catch (e) { $("msgKm").className = "err"; $("msgKm").textContent = "Error al guardar: " + e.code; }
+};
+
+// ---------- Configuración: personalizar ----------
+$("cName").value = S.name; $("cColor").value = S.color; $("cTheme").value = S.theme; $("cCur").value = S.cur; $("cPrecio").value = S.precio ?? "";
+const updHintPrecio = () => $("hintPrecio").textContent = S.precio ? "Al escribir el importe, los litros se calculan solos (puedes corregirlos a mano)." : "Déjalo vacío para seguir escribiendo los litros a mano.";
+updHintPrecio();
+$("cName").oninput = () => { S.name = $("cName").value; saveS(); applyLook(); };
+$("cColor").oninput = () => { S.color = $("cColor").value; saveS(); applyLook(); };
+$("cTheme").onchange = () => { S.theme = $("cTheme").value; saveS(); applyLook(); };
+$("cCur").onchange = () => { S.cur = $("cCur").value; saveS(); render(); };
+function readPrecio() {
+  const raw = $("cPrecio").value.replace(",", ".");
+  const v = parseFloat(raw);
+  S.precio = v > 0 ? v : null;
+  saveS(); updHintPrecio(); toggleLitrosField();
+}
+$("cPrecio").addEventListener("input", readPrecio);
+$("cPrecio").addEventListener("change", readPrecio);
+
+// ---------- Configuración: datos ----------
+$("cCol").value = S.col;
+$("cFb").value = S.fb ? Object.entries(S.fb).map(([k, v]) => `${k}: "${v}"`).join(",\n") : "";
+$("saveFb").onclick = () => {
+  const txt = $("cFb").value.trim(), col = $("cCol").value.trim() || "fuel";
+  if (/[\/\s]/.test(col)) { $("msgFb").textContent = "El nombre de la colección no puede tener espacios ni barras."; return; }
+  let fb = null;
+  if (txt) {
+    fb = {}; for (const m of txt.matchAll(/["']?(\w+)["']?\s*:\s*["']([^"']+)["']/g)) fb[m[1]] = m[2];
+    if (!fb.apiKey || !fb.projectId) { $("msgFb").textContent = "No encuentro apiKey y projectId en lo que has pegado."; return; }
+  }
+  S.fb = fb; S.col = col; saveS(); location.reload();
+};
+
+$("mig").onclick = async () => {
+  const old = items.filter(x => x.legacy), by = {};
+  old.forEach(x => (by[mes(x.fecha)] ||= []).push({ id: uid(), fecha: x.fecha, litros: x.litros, importe: x.importe, odo: x.odo ?? null, km: x.km }));
+  try {
+    for (const [m, rs] of Object.entries(by)) {
+      const ref = doc(db, S.col, m);
+      await runTransaction(db, async tx => { const s = await tx.get(ref); putMonth(tx, ref, m, [...(s.data()?.registros || []), ...rs]); });
+    }
+    for (const x of old) await deleteDoc(doc(db, S.col, x.id));
+    $("msgMig").textContent = "Hecho: " + old.length + " registros movidos.";
+  } catch (e) { $("msgMig").className = "err"; $("msgMig").textContent = "Error: " + e.code; }
+};
+
+$("exp").onclick = () => {
+  const rows = [["fecha", "litros", "importe", "cuentakm", "km_recorridos"], ...[...items].reverse().map(x => [x.fecha, x.litros, x.importe, x.odo ?? "", x.km])];
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([rows.map(r => r.join(";")).join("\n")], { type: "text/csv" }));
+  a.download = "gasolina.csv"; a.click();
+};
+</script>
+</body>
+</html>
