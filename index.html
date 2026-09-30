@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#e8edee;--card:#fff;--ink:#12252d;--mute:#5d707a;--line:#cdd8dc;--acc:#e8590c;--acc-ink:#fff;--ok:#1b7f5c}
-:root[data-theme=dark]{--bg:#0f1c21;--card:#172830;--ink:#e8f0f2;--mute:#8fa4ad;--line:#28404a;--ok:#4cc9a0}
+:root{--bg:#e8edee;--card:#fff;--ink:#12252d;--mute:#5d707a;--line:#cdd8dc;--acc:#e8590c;--acc-ink:#fff;--ok:#1b7f5c;--ok-bg:#e6f6ef}
+:root[data-theme=dark]{--bg:#0f1c21;--card:#172830;--ink:#e8f0f2;--mute:#8fa4ad;--line:#28404a;--ok:#4cc9a0;--ok-bg:#0f2a22}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,system-ui,sans-serif}
 h1,h2,.num{font-family:"Barlow Semi Condensed",sans-serif;letter-spacing:.01em}
@@ -88,11 +88,32 @@ nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .br .t i{display:block;height:100%;background:var(--acc);opacity:.4}
 .br span:last-child{text-align:right}
 .br.sel{font-weight:500}.br.sel .t i{opacity:1}
+#login{max-width:380px;margin:18vh auto 0;text-align:center}
+#login p{margin:10px 0 22px}
+#login button.p{max-width:260px;margin:0 auto}
+.authbox{display:flex;align-items:center;gap:12px;background:var(--ok-bg);border-color:var(--ok)}
+.authbox svg{flex:0 0 auto;width:22px;height:22px;stroke:var(--ok);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.authbox p{margin:0;font-size:14px;flex:1}
+.authbox button{flex:0 0 auto}
 [hidden]{display:none!important}
 @media(max-width:420px){.hero .big{font-size:52px}}
 </style>
 </head>
 <body>
+<div id="login" class="card" hidden>
+  <h1 id="loginAppName">Gasolina</h1>
+  <p class="hint">Inicia sesión para guardar tus repostajes en la nube y verlos igual en cualquier dispositivo.</p>
+  <form id="loginForm" style="display:grid;gap:12px;text-align:left">
+    <label class="w">Correo<input type="email" id="loginEmail" autocomplete="username" required></label>
+    <label class="w">Contraseña<input type="password" id="loginPass" autocomplete="current-password" required></label>
+    <button class="p w" type="submit" id="btnLogin">Entrar</button>
+  </form>
+  <p class="hint" style="margin:12px 0 4px">¿No tienes cuenta? <a class="lnk" id="btnRegister">Crear una</a> · <a class="lnk" id="btnForgot">He olvidado mi contraseña</a></p>
+  <p class="err" id="loginErr"></p>
+  <p class="ok" id="loginOk"></p>
+</div>
+
+<div id="appWrap" hidden>
 <main>
 <!-- PÁGINA REGISTRO -->
 <section id="pReg">
@@ -164,6 +185,12 @@ nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;st
 <section id="pCfg" hidden>
   <h1>Configuración</h1>
 
+  <div class="card authbox">
+    <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+    <p id="authText">Sesión iniciada</p>
+    <button id="btnLogout">Salir</button>
+  </div>
+
   <div class="card">
     <h2>Coche</h2>
     <label>Km actuales del coche (punto de partida)
@@ -222,9 +249,11 @@ nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;st
   <button id="tKpi"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>KPIs</button>
   <button id="tCfg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuración</button>
 </nav>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, deleteDoc, setDoc, doc, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ▼▼ CONFIGURACIÓN POR DEFECTO DE FIREBASE (también se puede cambiar desde Configuración) ▼▼
@@ -255,6 +284,7 @@ function applyLook() {
   const n = parseInt(S.color.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255));
   r.style.setProperty("--acc-ink", lum > 150 ? "#111" : "#fff");
   $("appName").textContent = document.title = S.name || "Gasolina";
+  $("loginAppName").textContent = S.name || "Gasolina";
 }
 mq.addEventListener("change", applyLook);
 applyLook();
@@ -276,31 +306,79 @@ $("tReg").onclick = () => { toggleLitrosField(); go("reg"); }; $("tKpi").onclick
 // ---------- Firebase ----------
 const fbCfg = S.fb || defaultFirebase;
 const configured = fbCfg.apiKey && !fbCfg.apiKey.startsWith("TU_");
-let db = null, colRef = null, cfgRef = null;
-let items = [], kmInicial = null;
+let db = null, auth = null, colRef = null, cfgRef = null, unsubItems = null, unsubCfg = null;
+let items = [], kmInicial = null, uid = null;
+
+function showLogin() {
+  $("login").hidden = false;
+  $("appWrap").hidden = true;
+}
+function showApp() {
+  $("login").hidden = true;
+  $("appWrap").hidden = false;
+}
 
 $("fbState").textContent = configured ? "conectado a " + fbCfg.projectId : "sin configurar";
 if (!configured) {
+  showApp();
   $("banner").hidden = false;
   $("banner").innerHTML = 'Firebase aún no está conectado. <a class="lnk" id="goCfg">Ábrelo en Configuración</a>.';
   $("goCfg").onclick = () => go("cfg");
 } else {
-  db = getFirestore(initializeApp(fbCfg));
-  colRef = collection(db, S.col);
-  cfgRef = doc(db, S.col, "_config");
-  onSnapshot(colRef,
-    snap => {
-      items = [];
-      snap.docs.forEach(d => {
-        const v = d.data();
-        if (Array.isArray(v.registros)) v.registros.forEach(r => items.push(r));
-        else if (v.fecha) items.push({ id: d.id, ...v, legacy: true });
-      });
-      items.sort((a, b) => b.fecha.localeCompare(a.fecha) || (b.odo || 0) - (a.odo || 0));
-      render();
-    },
-    e => { $("list").innerHTML = '<p class="err">Error al leer datos (' + e.code + '). Revisa las reglas de Firestore.</p>'; });
-  onSnapshot(cfgRef, s => { kmInicial = s.exists() ? s.data().kmInicial ?? null : null; if (document.activeElement !== $("cKm")) $("cKm").value = kmInicial ?? ""; render(); });
+  const app = initializeApp(fbCfg);
+  db = getFirestore(app);
+  auth = getAuth(app);
+
+  const authMsg = { "auth/invalid-email": "Ese correo no es válido.", "auth/missing-password": "Escribe una contraseña.", "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.", "auth/email-already-in-use": "Ya hay una cuenta con ese correo. Prueba a entrar.", "auth/invalid-credential": "Correo o contraseña incorrectos.", "auth/wrong-password": "Correo o contraseña incorrectos.", "auth/user-not-found": "No hay ninguna cuenta con ese correo. Pulsa \"Crear una\"." };
+  const authErr = e => { $("loginOk").textContent = ""; $("loginErr").textContent = authMsg[e.code] || ("No se pudo iniciar sesión: " + e.code); };
+
+  $("loginForm").onsubmit = async e => {
+    e.preventDefault();
+    $("loginErr").textContent = ""; $("loginOk").textContent = "";
+    try { await signInWithEmailAndPassword(auth, $("loginEmail").value.trim(), $("loginPass").value); }
+    catch (err) { authErr(err); }
+  };
+  $("btnRegister").onclick = async () => {
+    $("loginErr").textContent = ""; $("loginOk").textContent = "";
+    if (!$("loginEmail").value || !$("loginPass").value) { $("loginErr").textContent = "Escribe correo y contraseña primero."; return; }
+    try { await createUserWithEmailAndPassword(auth, $("loginEmail").value.trim(), $("loginPass").value); }
+    catch (err) { authErr(err); }
+  };
+  $("btnForgot").onclick = async () => {
+    $("loginErr").textContent = ""; $("loginOk").textContent = "";
+    if (!$("loginEmail").value) { $("loginErr").textContent = "Escribe tu correo arriba y pulsa este enlace otra vez."; return; }
+    try { await sendPasswordResetEmail(auth, $("loginEmail").value.trim()); $("loginOk").textContent = "Te hemos enviado un correo para cambiar la contraseña."; }
+    catch (err) { authErr(err); }
+  };
+  $("btnLogout").onclick = () => signOut(auth);
+
+  onAuthStateChanged(auth, user => {
+    if (unsubItems) { unsubItems(); unsubItems = null; }
+    if (unsubCfg) { unsubCfg(); unsubCfg = null; }
+    if (!user) {
+      uid = null; items = []; kmInicial = null;
+      showLogin();
+      return;
+    }
+    uid = user.uid;
+    $("authText").textContent = "Sesión iniciada como " + user.email + " — tus datos se guardan en la nube y se ven igual en cualquier dispositivo.";
+    showApp();
+    colRef = collection(db, "users", uid, S.col);
+    cfgRef = doc(db, "users", uid, S.col, "_config");
+    unsubItems = onSnapshot(colRef,
+      snap => {
+        items = [];
+        snap.docs.forEach(d => {
+          const v = d.data();
+          if (Array.isArray(v.registros)) v.registros.forEach(r => items.push(r));
+          else if (v.fecha) items.push({ id: d.id, ...v, legacy: true });
+        });
+        items.sort((a, b) => b.fecha.localeCompare(a.fecha) || (b.odo || 0) - (a.odo || 0));
+        render();
+      },
+      e => { $("list").innerHTML = '<p class="err">Error al leer datos (' + e.code + '). Revisa las reglas de Firestore.</p>'; });
+    unsubCfg = onSnapshot(cfgRef, s => { kmInicial = s.exists() ? s.data().kmInicial ?? null : null; if (document.activeElement !== $("cKm")) $("cKm").value = kmInicial ?? ""; render(); });
+  });
 }
 
 // ---------- Cálculos ----------
@@ -348,13 +426,13 @@ $("odo").addEventListener("input", preview);
 toggleLitrosField();
 
 const mes = f => f.slice(0, 7);
-const uid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2);
+const newId = () => crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2);
 const resumen = r => ({ n: r.length, litros: r.reduce((s, x) => s + x.litros, 0), importe: r.reduce((s, x) => s + x.importe, 0), km: r.reduce((s, x) => s + x.km, 0) });
 const putMonth = (tx, ref, m, regs) => regs.length ? tx.set(ref, { mes: m, registros: regs, resumen: resumen(regs) }) : tx.delete(ref);
 
 async function saveReg(r) {
-  r.id = uid();
-  const m = mes(r.fecha), ref = doc(db, S.col, m);
+  r.id = newId();
+  const m = mes(r.fecha), ref = doc(db, "users", uid, S.col, m);
   await runTransaction(db, async tx => {
     const s = await tx.get(ref);
     putMonth(tx, ref, m, [...(s.data()?.registros || []), r]);
@@ -363,8 +441,8 @@ async function saveReg(r) {
 async function delReg(id) {
   const x = items.find(i => i.id === id);
   if (!x) return;
-  if (x.legacy) return deleteDoc(doc(db, S.col, id));
-  const m = mes(x.fecha), ref = doc(db, S.col, m);
+  if (x.legacy) return deleteDoc(doc(db, "users", uid, S.col, id));
+  const m = mes(x.fecha), ref = doc(db, "users", uid, S.col, m);
   await runTransaction(db, async tx => {
     const s = await tx.get(ref);
     putMonth(tx, ref, m, (s.data()?.registros || []).filter(i => i.id !== id));
@@ -572,13 +650,13 @@ $("saveFb").onclick = () => {
 
 $("mig").onclick = async () => {
   const old = items.filter(x => x.legacy), by = {};
-  old.forEach(x => (by[mes(x.fecha)] ||= []).push({ id: uid(), fecha: x.fecha, litros: x.litros, importe: x.importe, odo: x.odo ?? null, km: x.km }));
+  old.forEach(x => (by[mes(x.fecha)] ||= []).push({ id: newId(), fecha: x.fecha, litros: x.litros, importe: x.importe, odo: x.odo ?? null, km: x.km }));
   try {
     for (const [m, rs] of Object.entries(by)) {
-      const ref = doc(db, S.col, m);
+      const ref = doc(db, "users", uid, S.col, m);
       await runTransaction(db, async tx => { const s = await tx.get(ref); putMonth(tx, ref, m, [...(s.data()?.registros || []), ...rs]); });
     }
-    for (const x of old) await deleteDoc(doc(db, S.col, x.id));
+    for (const x of old) await deleteDoc(doc(db, "users", uid, S.col, x.id));
     $("msgMig").textContent = "Hecho: " + old.length + " registros movidos.";
   } catch (e) { $("msgMig").className = "err"; $("msgMig").textContent = "Error: " + e.code; }
 };
