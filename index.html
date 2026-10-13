@@ -61,6 +61,13 @@ textarea{min-height:130px;font:13px/1.4 ui-monospace,monospace}
 .bwrap i{width:100%;background:var(--acc);border-radius:3px 3px 0 0;min-height:3px;display:block}
 .bwrap span{font-size:10px;color:var(--mute);white-space:nowrap}
 #proj{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+#yoy{margin:8px 0 0}
+.trend{width:100%;height:auto;display:block}
+.trend path{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.trend circle{fill:var(--acc)}
+.trend .area{stroke:none;fill:var(--acc);opacity:.12}
+#trendVerdict.ok{color:var(--ok)}
+#trendVerdict.err{color:#c92a2a}
 .chart{display:flex;align-items:flex-end;gap:4px;height:90px}
 .chart i{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:3px}
 .err{color:#c92a2a;font-size:14px}
@@ -167,6 +174,13 @@ nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;st
     </div>
     <div class="kpis" id="kpis"></div>
     <p class="hint" id="proj" hidden></p>
+    <p class="hint" id="yoy" hidden></p>
+  </div>
+
+  <div class="card" id="trendCard" hidden>
+    <h2>Tendencia de consumo</h2>
+    <div id="trendChart"></div>
+    <p class="hint" id="trendVerdict" style="margin-top:10px"></p>
   </div>
 
   <div class="card" id="gastoCard" hidden>
@@ -415,7 +429,9 @@ function preview() {
   const t = [];
   if (p == null) { $("preview").innerHTML = 'Antes de empezar, indica los km actuales del coche en <a class="lnk" id="goCfg2">Configuración</a>.'; $("goCfg2").onclick = () => go("cfg"); return; }
   const km = o - p;
-  if (o && km <= 0) { $("preview").textContent = "Los km deben ser mayores que el último registro (" + fmt(p, 0) + ")."; return; }
+  const primero = items.length === 0;
+  if (o && km < 0 || (o && km === 0 && !primero)) { $("preview").textContent = "Los km deben ser mayores que el último registro (" + fmt(p, 0) + ")."; return; }
+  if (o && km === 0 && primero) { t.push("Repostaje inicial: sirve de punto de partida y no cuenta para el consumo"); if (l && i) t.push(fmt(i / l, 3) + " " + S.cur + "/L"); $("preview").textContent = t.join("  ·  "); return; }
   if (km > 0) { t.push(fmt(km, 0) + " km recorridos"); if (l) t.push(fmt(l / km * 100) + " L/100 km"); if (i) t.push(fmt(i / km * 100) + " " + S.cur + "/100 km"); }
   if (l && i) t.push(fmt(i / l, 3) + " " + S.cur + "/L");
   $("preview").textContent = t.join("  ·  ");
@@ -456,9 +472,10 @@ $("f").onsubmit = async e => {
   if (!$("litros").value) { $("preview").textContent = "Escribe los litros o pon un precio medio en Configuración."; return; }
   const p = lastOdo(), o = +$("odo").value;
   if (p == null) return preview();
-  if (o <= p) return preview();
+  const primero = items.length === 0;
+  if (o < p || (o === p && !primero)) return preview();
   try {
-    await saveReg({ fecha: $("fecha").value, litros: +$("litros").value, importe: +$("importe").value, odo: o, km: o - p });
+    await saveReg({ fecha: $("fecha").value, litros: +$("litros").value, importe: +$("importe").value, odo: o, km: o - p, ...(o === p ? { inicial: true } : {}) });
     ["litros", "importe", "odo"].forEach(id => $(id).value = ""); delete $("litros").dataset.auto;
     $("preview").textContent = "Guardado.";
   } catch (err) { $("preview").textContent = "Error al guardar: " + err.code; }
@@ -468,10 +485,14 @@ let selMonth = null;
 const agg = key => {
   const a = items.filter(x => x.fecha && x.fecha.startsWith(key));
   if (!a.length) return null;
-  const L = a.reduce((s, x) => s + x.litros, 0), E = a.reduce((s, x) => s + x.importe, 0), K = a.reduce((s, x) => s + x.km, 0);
-  return { n: a.length, L, E, K, cons: K ? L / K * 100 : null, e100: K ? E / K * 100 : null, pl: L ? E / L : null, Lm: L / a.length, Em: E / a.length, Km_: K / a.length };
+  const t = a.filter(x => x.km > 0);
+  const L = a.reduce((s, x) => s + x.litros, 0), E = a.reduce((s, x) => s + x.importe, 0), K = t.reduce((s, x) => s + x.km, 0);
+  const Lt = t.reduce((s, x) => s + x.litros, 0), Et = t.reduce((s, x) => s + x.importe, 0);
+  return { n: a.length, L, E, K, cons: K ? Lt / K * 100 : null, e100: K ? Et / K * 100 : null, pl: L ? E / L : null, Lm: L / a.length, Em: E / a.length, Km_: t.length ? K / t.length : null };
 };
 const prevKey = key => { const [y, m] = key.split("-").map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
+const prevYearKey = key => { const [y, m] = key.split("-").map(Number); return (y - 1) + "-" + String(m).padStart(2, "0"); };
+const monthLabel = key => { const [y, m] = key.split("-").map(Number); const l = new Date(y, m - 1, 1).toLocaleDateString("es-ES", { month: "short", year: "2-digit" }); return l; };
 function renderKpis() {
   const months = [...new Set(items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean))].sort();
   const now = new Date().toISOString().slice(0, 7);
@@ -497,7 +518,7 @@ function renderKpis() {
     k("Consumo", c.cons != null ? fmt(c.cons) + " L/100" : "–", c.cons, p?.cons, true) +
     k("Coste por 100 km", c.e100 != null ? fmt(c.e100) + " " + S.cur : "–", c.e100, p?.e100, true) +
     k("Precio medio", fmt(c.pl, 3) + " " + S.cur + "/L", c.pl, p?.pl, true) +
-    k("Km medios/repostaje", fmt(c.Km_, 0) + " km", c.Km_, p?.Km_, false) +
+    k("Km medios/repostaje", c.Km_ != null ? fmt(c.Km_, 0) + " km" : "–", c.Km_, p?.Km_, false) +
     k("Litros medios/repostaje", fmt(c.Lm) + " L", c.Lm, p?.Lm, false) +
     k("Gasto medio/repostaje", fmt(c.Em) + " " + S.cur, c.Em, p?.Em, true) +
     k("Repostajes", c.n, c.n, p?.n, false);
@@ -509,6 +530,16 @@ function renderKpis() {
     $("proj").hidden = false;
     $("proj").textContent = "A este ritmo, este mes te gastarás ~" + fmt(proy) + " " + S.cur + " (llevas " + fmt(c.E) + " " + S.cur + " en " + day + " días).";
   } else $("proj").hidden = true;
+
+  const py = agg(prevYearKey(selMonth));
+  if (py && py.cons != null && c.cons != null) {
+    const pct = (c.cons - py.cons) / py.cons * 100;
+    const [yy, mm] = selMonth.split("-").map(Number);
+    const nombreMes = new Date(yy, mm - 1, 1).toLocaleDateString("es-ES", { month: "long" });
+    $("yoy").hidden = false;
+    $("yoy").className = "hint " + (pct <= 0 ? "ok" : "err");
+    $("yoy").textContent = "Vs " + nombreMes + " de " + (yy - 1) + ": consumo " + (pct > 0 ? "+" : "") + fmt(pct, 0) + "% (" + fmt(py.cons) + " L/100 km entonces).";
+  } else $("yoy").hidden = true;
 }
 const stepMonth = d => {
   const months = [...new Set([...items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean), new Date().toISOString().slice(0, 7)])].sort();
@@ -516,6 +547,31 @@ const stepMonth = d => {
   if (j >= 0 && j < months.length) { selMonth = months[j]; renderKpis(); renderCompare(); }
 };
 $("mPrev").onclick = () => stepMonth(-1); $("mNext").onclick = () => stepMonth(1);
+
+function renderTrend() {
+  const ms = [...new Set(items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean))].sort().filter(m => agg(m).cons != null).slice(-24);
+  $("trendCard").hidden = ms.length < 3;
+  if (ms.length < 3) return;
+  const vals = ms.map(m => agg(m).cons);
+  const w = 640, h = 160, pad = 14;
+  const max = Math.max(...vals), min = Math.min(...vals), range = (max - min) || 1;
+  const stepX = (w - 2 * pad) / (ms.length - 1);
+  const pts = vals.map((v, i) => ({ x: pad + i * stepX, y: pad + (1 - (v - min) / range) * (h - 2 * pad) }));
+  const line = pts.map((p, i) => (i === 0 ? "M" : "L") + p.x.toFixed(1) + " " + p.y.toFixed(1)).join(" ");
+  const area = line + ` L${pts[pts.length - 1].x.toFixed(1)} ${h - pad} L${pts[0].x.toFixed(1)} ${h - pad} Z`;
+  const dots = pts.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.6"><title>${monthLabel(ms[i])}: ${fmt(vals[i])} L/100 km</title></circle>`).join("");
+  $("trendChart").innerHTML = `<svg class="trend" viewBox="0 0 ${w} ${h}"><path class="area" d="${area}"/><path d="${line}"/>${dots}</svg>`;
+
+  const half = Math.max(1, Math.floor(ms.length / 3));
+  const avg = a => a.reduce((s, v) => s + v, 0) / a.length;
+  const firstAvg = avg(vals.slice(0, half)), lastAvg = avg(vals.slice(-half));
+  const pct = (lastAvg - firstAvg) / firstAvg * 100;
+  const v = $("trendVerdict");
+  v.className = "hint " + (Math.abs(pct) < 3 ? "" : pct < 0 ? "ok" : "err");
+  v.textContent = Math.abs(pct) < 3
+    ? "Tu consumo se mantiene estable desde " + monthLabel(ms[0]) + " (sin cambios relevantes)."
+    : "Tu consumo ha " + (pct < 0 ? "bajado" : "subido") + " un " + fmt(Math.abs(pct), 0) + "% desde " + monthLabel(ms[0]) + " hasta ahora.";
+}
 
 function renderCompare() {
   const ms = [...new Set(items.map(x => x.fecha && x.fecha.slice(0, 7)).filter(Boolean))].sort().slice(-12);
@@ -549,13 +605,15 @@ $("cmp").addEventListener("click", e => {
 
 function render() {
   renderKpis();
+  renderTrend();
   renderCompare();
   $("migBox").hidden = !items.some(x => x.legacy);
-  const L = items.reduce((s, x) => s + x.litros, 0), E = items.reduce((s, x) => s + x.importe, 0), K = items.reduce((s, x) => s + x.km, 0);
+  const tr = items.filter(x => x.km > 0);
+  const E = items.reduce((s, x) => s + x.importe, 0), K = tr.reduce((s, x) => s + x.km, 0), L = tr.reduce((s, x) => s + x.litros, 0), Et = tr.reduce((s, x) => s + x.importe, 0);
   $("avg").textContent = K ? fmt(L / K * 100) : "–";
   $("tGasto").textContent = fmt(E) + " " + S.cur;
   $("tKm").textContent = fmt(K, 0) + " km";
-  $("tKmE").textContent = K ? fmt(E / K * 100) + " " + S.cur : "–";
+  $("tKmE").textContent = K ? fmt(Et / K * 100) + " " + S.cur : "–";
   const p = lastOdo(); $("odoNow").textContent = p != null ? fmt(p, 0) + " km" : "–";
   $("odo").placeholder = p != null ? "Último: " + fmt(p, 0) : "";
   preview();
@@ -588,13 +646,14 @@ function render() {
       head = `<div class="mh"><b>${new Date(yy, mm - 1, 1).toLocaleDateString("es-ES", { month: "long", year: "numeric" })}</b><span>${t.n} repostaje${t.n > 1 ? "s" : ""} · ${fmt(t.E)} ${S.cur} · ${fmt(t.K, 0)} km</span></div>`;
     }
     const f = new Date(x.fecha + "T00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });
-    return head + `<div class="row"><div class="d">${f}</div><div class="c">${fmt(x.litros / x.km * 100)} L/100</div>
-      <div class="m">${fmt(x.litros)} L · ${fmt(x.importe)} ${S.cur} · ${fmt(x.km, 0)} km${x.odo ? " (cuentakm " + fmt(x.odo, 0) + ")" : ""} · ${fmt(x.importe / x.litros, 3)} ${S.cur}/L${badge}</div>
+    const ini = !(x.km > 0);
+    return head + `<div class="row"><div class="d">${f}</div><div class="c">${ini ? "Inicial" : fmt(x.litros / x.km * 100) + " L/100"}</div>
+      <div class="m">${fmt(x.litros)} L · ${fmt(x.importe)} ${S.cur} · ${ini ? "punto de partida" : fmt(x.km, 0) + " km"}${x.odo ? " (cuentakm " + fmt(x.odo, 0) + ")" : ""} · ${fmt(x.importe / x.litros, 3)} ${S.cur}/L${badge}</div>
       <button class="x" data-id="${x.id}">Borrar</button></div>`;
   }).join("");
-  const last = shown.slice(0, 12).reverse().map(x => x.litros / x.km * 100), max = Math.max(...last);
+  const last = shown.filter(x => x.km > 0).slice(0, 12).reverse().map(x => x.litros / x.km * 100), max = Math.max(...last, 1);
   $("chart").innerHTML = last.map(v => `<i style="height:${v / max * 100}%" title="${fmt(v)} L/100 km"></i>`).join("");
-  $("chartCard").hidden = shown.length < 2;
+  $("chartCard").hidden = last.length < 2;
 
   if (configured) {
     const dias = (Date.now() - new Date(items[0].fecha + "T00:00")) / 86400000;
